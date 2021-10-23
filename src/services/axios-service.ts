@@ -23,7 +23,7 @@ function axiosFunction(configs: any, resolve:any, reject:any ):Promise<any> {
         }
     );
 
-    return instance.request(configs).then((res) => { resolve(res.data); }).catch((err) => { reject(err); });
+    return instance.request(configs).then((res) => { resolve(res?.data); }).catch((err) => { reject(err); });
 }
 
 export class PokemonService {

@@ -2,7 +2,7 @@
     width: 50%;
     height: 50%;
 }
-.pokemon-img-container{
+.pokemon-img-container {
     display: flex;
     justify-content: center;
 }
@@ -28,7 +28,10 @@
     overflow: visible;
 }
 
-.enchanced-toolbar{
+.enchanced-toolbar {
     display: flex;
     justify-content: space-between;
+    .pokemon-search-bar {
+        margin: 1rem;
+    }
 }

@@ -1,5 +1,8 @@
 import "./pokemon.scss";
-import { Button, Checkbox, ListItemIcon, TextField, Toolbar, Typography } from '@material-ui/core';
+import { Button, Checkbox, ListItemIcon, Toolbar, Typography } from '@material-ui/core';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import AlertTitle from '@mui/material/AlertTitle';
 import { DataGrid } from '@mui/x-data-grid';
 import React, { useEffect, useState } from 'react';
 import { PokemonService } from '../services/axios-service';
@@ -12,10 +15,10 @@ import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
-import SearchIcon from '@mui/icons-material/Search';
 import { useDispatch, useSelector } from "react-redux";
 import { handleFavourite } from "../services/reducers/rootReducer";
 import { requestSearch } from "../helper/stringHelper";
+import SearchBar from "material-ui-search-bar";
 
 export default function Pokemon() {
   const dispatch = useDispatch();
@@ -27,6 +30,7 @@ export default function Pokemon() {
   const [pokemonDetail, setPokemonDetail] = useState(undefined);
   const [showFavourite, setShowFavourite] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [error, setError] = useState(undefined);
 
   const favouriteList = useSelector(state => state.favourite);
 
@@ -56,8 +60,8 @@ export default function Pokemon() {
         setRowCount(favouriteList.length);
       }
       else {
-        const currRows = rows.filter(x => favouriteList.findIndex(r => r.name === x.name) > -1 );
-        
+        const currRows = rows.filter(x => favouriteList.findIndex(r => r.name === x.name) > -1);
+
         setRows(currRows);
         setRowCount(currRows.length);
       }
@@ -128,6 +132,9 @@ export default function Pokemon() {
             abilities: Array.from(res.abilities, x => x.ability.name)
           });
         }
+        else {
+          setError({ title: "Error", content: "NotFound" })
+        }
       }
       getPokemonDetails();
     }
@@ -135,16 +142,16 @@ export default function Pokemon() {
     return <Button className="pokemon-name-modal" onClick={() => onClick(details)} variant="text" size="small">{details.row.name}</Button>
   }
 
-  const handleChange = async (event) => {
-    setSearchValue(event.target.value);
+  const handleChange = async (searchText) => {
+    setSearchValue(searchText ?? "");
 
-    if (event.target.value.length > 0 && showFavourite) {
-      setRows(requestSearch(event.target.value, rows));
-    } else if (event.target.value.length > 0) {
+    if (searchText && searchText.length > 0 && showFavourite) {
+      setRows(requestSearch(searchText, rows));
+    } else if (searchText && searchText.length > 0) {
       const res = await PokemonService.GetPokemonList(0, rowCount);
       if (res) {
         setRowCount(res.count);
-        setRows(requestSearch(event.target.value, res.results.map((result, index) => {
+        setRows(requestSearch(searchText, res.results.map((result, index) => {
           return {
             id: index,
             isFavourite: favouriteList.findIndex(x => x.name === result.name) > -1,
@@ -163,15 +170,14 @@ export default function Pokemon() {
       <Title />
       <div className="enchanced-toolbar">
         <div><Checkbox checked={showFavourite} onChange={() => { setShowFavourite(!showFavourite); }} />Show Favourite</div>
-        <TextField
-          id="outlined-multiline-flexible"
-          placeholder="Search…"
-          maxRows={4}
+        <SearchBar
+          className="pokemon-search-bar"
+          placeholder={"Press enter to search"}
           value={searchValue}
+          onRequestSearch={handleChange}
+          onCancelSearch={handleChange}
+          disabled={loading}
           onChange={handleChange}
-          InputProps={{
-            startAdornment: <SearchIcon fontSize="small" />
-          }}
         />
       </div>
       <DataGrid
@@ -228,6 +234,14 @@ export default function Pokemon() {
           </Typography>
         </Box>
       </Modal>
+      {error &&
+        <Snackbar open={error !== undefined} autoHideDuration={6000} onClose={() => { setError(undefined) }}>
+          <Alert severity="error" sx={{ width: '100%' }}>
+            <AlertTitle>{error?.title}</AlertTitle>
+            {error?.content}
+          </Alert>
+        </Snackbar>
+      }
     </div>
   );
 }
