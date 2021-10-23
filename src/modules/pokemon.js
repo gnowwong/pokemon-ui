@@ -24,7 +24,8 @@ export default function Pokemon() {
   const dispatch = useDispatch();
   const pageSize = 20;
   const [rows, setRows] = useState([]);
-  const [rowCount, setRowCount] = useState(0);
+  const [rowCount, setRowCount] = useState(0); 
+  const [allCount, setAllCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currPage, setCurrentPage] = useState(0);
   const [pokemonDetail, setPokemonDetail] = useState(undefined);
@@ -45,6 +46,7 @@ export default function Pokemon() {
             ...result
           };
         });
+        setAllCount(res.count);
         setRowCount(res.count);
         setRows(currPokemonList);
       }
@@ -148,16 +150,17 @@ export default function Pokemon() {
     if (searchText && searchText.length > 0 && showFavourite) {
       setRows(requestSearch(searchText, rows));
     } else if (searchText && searchText.length > 0) {
-      const res = await PokemonService.GetPokemonList(0, rowCount);
+      const res = await PokemonService.GetPokemonList(0, allCount);
       if (res) {
-        setRowCount(res.count);
-        setRows(requestSearch(searchText, res.results.map((result, index) => {
+        const searchedRows = requestSearch(searchText, res.results.map((result, index) => {
           return {
             id: index,
             isFavourite: favouriteList.findIndex(x => x.name === result.name) > -1,
             ...result
           };
-        })));
+        }));
+        setRowCount(searchedRows.length);
+        setRows(searchedRows);
       }
       else {
         setRows([])
