@@ -1,0 +1,34 @@
+.pokemon-img {
+    width: 50%;
+    height: 50%;
+}
+.pokemon-img-container{
+    display: flex;
+    justify-content: center;
+}
+
+.pokemon-details {
+    display: flex;
+    align-items: center;
+    .pokemon-details-list {
+        padding: 0;
+    }
+    p {
+        padding-top: 4px;
+        padding-bottom: 4px;
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}
+
+.col-overflow
+    .MuiDataGrid-columnHeaderDraggableContainer
+    .MuiDataGrid-columnHeaderTitleContainer
+    .MuiDataGrid-columnHeaderTitle {
+    overflow: visible;
+}
+
+.enchanced-toolbar{
+    display: flex;
+    justify-content: space-between;
+}
