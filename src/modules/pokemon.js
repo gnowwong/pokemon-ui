@@ -1,30 +1,22 @@
 import "./pokemon.scss";
-import { Button, Checkbox, ListItemIcon, Toolbar, Typography } from '@material-ui/core';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import AlertTitle from '@mui/material/AlertTitle';
 import { DataGrid } from '@mui/x-data-grid';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PokemonService } from '../services/axios-service';
-import Box from '@mui/material/Box';
-import Modal from '@mui/material/Modal';
-import HeightIcon from '@mui/icons-material/Height';
-import LineWeightIcon from '@mui/icons-material/LineWeight';
-import FitnessCenterTwoToneIcon from '@mui/icons-material/FitnessCenterTwoTone';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
-import AcUnitIcon from '@mui/icons-material/AcUnit';
 import { useDispatch, useSelector } from "react-redux";
 import { handleFavourite } from "../services/reducers/rootReducer";
+import MainToolBar from "./toolbar/toolbar";
 import { requestSearch } from "../helper/stringHelper";
-import SearchBar from "material-ui-search-bar";
+import Title from "./title/title";
+import MainModal from "./modal/modal";
+import MainSnackBar from "./snack-bar/snack-bar";
+import MainCheckBox from "./checkbox/checkbox";
+import MainButton from "./button/button";
 
 export default function Pokemon() {
   const dispatch = useDispatch();
   const pageSize = 20;
   const [rows, setRows] = useState([]);
-  const [rowCount, setRowCount] = useState(0); 
+  const [rowCount, setRowCount] = useState(0);
   const [allCount, setAllCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currPage, setCurrentPage] = useState(0);
@@ -82,66 +74,34 @@ export default function Pokemon() {
   }, [currPage, showFavourite, searchValue]);
 
   const columns = [
-    { field: 'isFavourite', headerName: 'Favourite', headerClassName: "col-overflow", renderCell: (params) => { return customCheckbox(params, params.value) }, flex: 1 },
-    { field: 'name', headerName: 'Name', headerClassName: "col-overflow", renderCell: (params) => { return customButton(params) }, flex: 1 },
+    { field: 'isFavourite', headerName: 'Favourite', headerClassName: "col-overflow", renderCell: (params) => { return <MainCheckBox details={params} handleFavouriteChange={(data) => handleFavouriteChange(data, params)} /> }, flex: 1 },
+    { field: 'name', headerName: 'Name', headerClassName: "col-overflow", renderCell: (params) => { return <MainButton details={params} onClick={(details) => onClick(details)} /> }, flex: 1 },
   ];
 
-  const Title = () => {
-    return (
-      <>
-        <Toolbar
-          sx={{
-            pl: { sm: 2 },
-            pr: { xs: 1, sm: 1 }
-          }}
-        >
-          <Typography
-            sx={{ flex: '1 1 100%' }}
-            variant="h6"
-            id="tableTitle"
-            component="div"
-          >
-            Pokemon List
-          </Typography>
-        </Toolbar>
-      </>
-    );
-  };
-
-  const customCheckbox = (details, value) => {
-
-    function handleFavouriteChange(data) {
-      dispatch(handleFavourite(data));
-      if (showFavourite) {
-        setRows((rows) => rows.filter((row) => row.id !== details.id));
-      }
+  function handleFavouriteChange(data, details) {
+    dispatch(handleFavourite(data));
+    if (showFavourite) {
+      setRows((rows) => rows.filter((row) => row.id !== details.id));
     }
-
-    return <Checkbox onChange={(e) => handleFavouriteChange({ ...details.row, isFavourite: !details.row.isFavourite })} defaultChecked={details.row.isFavourite} value={details.row.isFavourite} checkedIcon={<>⭐</>} icon={<>➖</>} />
   }
 
-  const customButton = (details) => {
-
-    const onClick = (e) => {
-      const getPokemonDetails = async () => {
-        const res = await PokemonService.GetPokemonDetail(e.row.id + 1);
-        if (res) {
-          setPokemonDetail({
-            name: res.name,
-            height: res.height,
-            weight: res.weight,
-            image: res.sprites.front_default,
-            abilities: Array.from(res.abilities, x => x.ability.name)
-          });
-        }
-        else {
-          setError({ title: "Error", content: "NotFound" })
-        }
+  const onClick = (e) => {
+    const getPokemonDetails = async () => {
+      const res = await PokemonService.GetPokemonDetail(e.row.id + 1);
+      if (res) {
+        setPokemonDetail({
+          name: res.name,
+          height: res.height,
+          weight: res.weight,
+          image: res.sprites.front_default,
+          abilities: Array.from(res.abilities, x => x.ability.name)
+        });
       }
-      getPokemonDetails();
+      else {
+        setError({ title: "Error", content: "NotFound" })
+      }
     }
-
-    return <Button className="pokemon-name-modal" onClick={() => onClick(details)} variant="text" size="small">{details.row.name}</Button>
+    getPokemonDetails();
   }
 
   const handleChange = async (searchText) => {
@@ -170,20 +130,27 @@ export default function Pokemon() {
 
   return (
     <div style={{ height: 400, width: '100%' }}>
-      <Title />
-      <div className="enchanced-toolbar">
-        <div><Checkbox checked={showFavourite} onChange={() => { setShowFavourite(!showFavourite); }} />Show Favourite</div>
-        <SearchBar
-          className="pokemon-search-bar"
-          placeholder={"Press enter to search"}
-          value={searchValue}
-          onRequestSearch={handleChange}
-          onCancelSearch={handleChange}
-          disabled={loading}
-          onChange={handleChange}
+      {error &&
+        <MainSnackBar
+          error={error}
+          setError={(error) => setError(error)}
         />
-      </div>
+      }
+      <Title />
       <DataGrid
+        components={{
+          Toolbar: MainToolBar
+        }}
+        componentsProps={{
+          toolbar: {
+            loading: loading,
+            showFavourite: showFavourite,
+            setShowFavourite: setShowFavourite,
+            rows: rows,
+            setRows: setRows,
+            handleChange: (value) => handleChange(value)
+          }
+        }}
         rows={rows}
         columns={columns}
         pageSize={pageSize}
@@ -194,69 +161,10 @@ export default function Pokemon() {
         paginationMode="server"
         disableSelectionOnClick={true}
       />
-      <Modal
-        open={pokemonDetail !== undefined}
-        onClose={() => { setPokemonDetail(undefined) }}
-      >
-        <Box sx={style}>
-          <Typography id="modal-modal-title" variant="h6" component="h2">
-            {pokemonDetail?.name}
-          </Typography>
-          <div className="pokemon-img-container">
-            <img
-              src={pokemonDetail?.image}
-              alt={pokemonDetail?.name}
-              loading="lazy"
-              className="pokemon-img"
-            />
-          </div>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
-            <LineWeightIcon /><p>{pokemonDetail?.weight}</p>
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
-            <HeightIcon /> <p>{pokemonDetail?.height}</p>
-          </Typography>
-          <Typography id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
-            <FitnessCenterTwoToneIcon />
-            <List dense={true} className="pokemon-details-list">
-              {
-                pokemonDetail?.abilities.map((value) =>
-                  React.cloneElement(<ListItem>
-                    <ListItemIcon>
-                      <AcUnitIcon fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={value}
-                    />
-                  </ListItem>, {
-                    key: value,
-                  }),
-                )
-              }
-            </List>
-          </Typography>
-        </Box>
-      </Modal>
-      {error &&
-        <Snackbar open={error !== undefined} autoHideDuration={6000} onClose={() => { setError(undefined) }}>
-          <Alert severity="error" sx={{ width: '100%' }}>
-            <AlertTitle>{error?.title}</AlertTitle>
-            {error?.content}
-          </Alert>
-        </Snackbar>
-      }
+      <MainModal
+        pokemonDetail={pokemonDetail}
+        setPokemonDetail={setPokemonDetail}
+      />
     </div>
   );
 }
-
-const style = {
-  position: 'absolute',
-  top: '50%',
-  left: '50%',
-  transform: 'translate(-50%, -50%)',
-  width: '50%',
-  bgcolor: 'background.paper',
-  border: '2px solid #000',
-  boxShadow: 24,
-  p: 4,
-};

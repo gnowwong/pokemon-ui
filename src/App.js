@@ -6,7 +6,7 @@ import Pokemon from "./modules/pokemon";
 function App() {
   const routes = [
     {
-      id: "Home",
+      key: "Home",
       path: "/",
       component: Pokemon
     },
@@ -17,6 +17,7 @@ function App() {
         {
           routes.map(route => {
             return <Route
+              key={route.key}
               path={`${route.path}`}
               component={route.component}
             />
