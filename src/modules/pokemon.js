@@ -1,77 +1,127 @@
 import "./pokemon.scss";
 import { DataGrid } from '@mui/x-data-grid';
-import { useEffect, useState } from 'react';
+import { useEffect, useCallback } from 'react';
 import { PokemonService } from '../services/axios-service';
 import { useDispatch, useSelector } from "react-redux";
-import { handleFavourite } from "../services/reducers/rootReducer";
+import { getPokemonDetails, getPokemonList, handleFavourite, setRowCount, setRows, setSearchValue, setShowFavourite } from "../services/reducers/root-reducer";
 import MainToolBar from "./toolbar/toolbar";
-import { requestSearch } from "../helper/stringHelper";
 import Title from "./title/title";
 import MainModal from "./modal/modal";
-import MainSnackBar from "./snack-bar/snack-bar";
 import MainCheckBox from "./checkbox/checkbox";
 import MainButton from "./button/button";
+import { MainCounter } from "../Counter";
+import './../helper/stringHelper';
+
+const DataGridSelector = (showFavourite) => {
+  const { pokemonSelector, favouriteSelector } = useSelector(state => { return { pokemonSelector: state.pokemon, favouriteSelector: state.favourite } });
+
+  const dispatch = useDispatch();
+  const setRowCountDispatch = (len) => dispatch(setRowCount(len));
+  const setRowsDispatch = (rows) => dispatch(setRows(rows));
+  const resetRows = () => dispatch(setRows([]));
+  const setSearchValueDispatch = (value) => dispatch(setSearchValue(value));
+
+  const handleChange = async (searchText) => {
+    setSearchValueDispatch(searchText ?? "");
+    if (searchText && searchText.length > 0 && showFavourite) {
+      setRowsDispatch(searchText.requestSearch(pokemonSelector.rows))
+    } else if (searchText && searchText.length > 0) {
+      const res = await PokemonService.GetPokemonList(0, pokemonSelector.allCount);
+      if (res) {
+        const searchedRows = searchText.requestSearch(res.results.map((result, index) => {
+          return {
+            id: index,
+            isFavourite: favouriteSelector?.favouriteList?.findIndex(x => x.name === result.name) > -1,
+            ...result
+          };
+        }));
+        setRowCountDispatch(searchedRows.length);
+        setRowsDispatch(searchedRows);
+      }
+      else {
+        resetRows();
+      }
+    }
+  };
+
+  return { handleChange };
+
+}
+
+const PokemonList = ({ showFavourite, setShowFavourite, setRowsDispatch, columns, pageSize, onPageChange }) => {
+  const { loading, count, rows } = useSelector(state => state.pokemon);
+  const { handleChange } = DataGridSelector(showFavourite);
+
+  return <DataGrid
+    components={{
+      Toolbar: MainToolBar
+    }}
+    componentsProps={{
+      toolbar: {
+        loading: loading,
+        showFavourite: showFavourite,
+        setShowFavourite: setShowFavourite,
+        rows: rows,
+        setRows: setRowsDispatch,
+        handleChange: handleChange
+      }
+    }}
+    rows={rows}
+    columns={columns}
+    pageSize={pageSize}
+    rowCount={count}
+    loading={loading}
+    onPageChange={onPageChange}
+    density="compact"
+    paginationMode="server"
+    disableSelectionOnClick={true}
+    rowsPerPageOptions={[20, 50]}
+  />
+}
 
 export default function Pokemon() {
   const dispatch = useDispatch();
-  const pageSize = 20;
-  const [rows, setRows] = useState([]);
-  const [rowCount, setRowCount] = useState(0);
-  const [allCount, setAllCount] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [currPage, setCurrentPage] = useState(0);
-  const [pokemonDetail, setPokemonDetail] = useState(undefined);
-  const [showFavourite, setShowFavourite] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-  const [error, setError] = useState(undefined);
+  const setRowsDispatch = useCallback((rows) => { dispatch(setRows(rows)) }, [dispatch]);
+  const handleFavouriteDispatch = (favourite) => dispatch(handleFavourite(favourite));
+  const getPokemonListDispatch = useCallback((list) => dispatch(getPokemonList(list)), [dispatch]);
+  const getPokemonDetailsDispatch = (id) => dispatch(getPokemonDetails(id));
+  const setShowFavouriteDispatch = (show) => dispatch(setShowFavourite(show));
 
-  const favouriteList = useSelector(state => state.favourite);
+  const { favouriteList, showFavourite } = useSelector(state => state.favourite);
+  const { rows } = useSelector(state => state.pokemon);
+  const { searchValue } = useSelector(state => state.search);
+
+  const pageSize = 20;
 
   useEffect(() => {
-    const getData = async () => {
-      const res = await PokemonService.GetPokemonList(pageSize * currPage);
-      if (res) {
-        const currPokemonList = res.results.map((result, index) => {
-          return {
-            id: (pageSize * currPage) + index,
-            isFavourite: favouriteList.findIndex(x => x.name === result.name) > -1,
-            ...result
-          };
-        });
-        setAllCount(res.count);
-        setRowCount(res.count);
-        setRows(currPokemonList);
-      }
-      setLoading(false);
-    }
+    const setRowCountDispatch = (len) => dispatch(setRowCount(len));
 
     if (!showFavourite && searchValue.length === 0) {
-      getData();
+      getPokemonListDispatch({ seed: pageSize * 0, favouriteList: favouriteList });
     }
     else {
       if (searchValue.length === 0) {
-        setRows(favouriteList);
-        setRowCount(favouriteList.length);
+        setRowsDispatch(favouriteList);
+        setRowCountDispatch(favouriteList.length);
       }
       else {
         const currRows = rows.filter(x => favouriteList.findIndex(r => r.name === x.name) > -1);
-
-        setRows(currRows);
-        setRowCount(currRows.length);
+        setRowsDispatch(currRows);
+        setRowCountDispatch(favouriteList.length);
       }
-      setLoading(false);
     }
 
     return () => {
       //setRows([]);
       //setRowCount(0);
-      setLoading(true);
+      //setLoading(true);
       //setCurrentPage(0);
-      setPokemonDetail(undefined);
+      // setPokemonDetail(undefined);
       //setShowFavourite(false);
       //setSearchValue('');
     }
-  }, [currPage, showFavourite, searchValue]);
+  }, [dispatch, searchValue.length, showFavourite]);
+
 
   const columns = [
     { field: 'isFavourite', headerName: 'Favourite', headerClassName: "col-overflow", renderCell: (params) => { return <MainCheckBox details={params} handleFavouriteChange={(data) => handleFavouriteChange(data, params)} /> }, flex: 1 },
@@ -79,92 +129,35 @@ export default function Pokemon() {
   ];
 
   function handleFavouriteChange(data, details) {
-    dispatch(handleFavourite(data));
+    handleFavouriteDispatch(data);
     if (showFavourite) {
-      setRows((rows) => rows.filter((row) => row.id !== details.id));
+      setRowsDispatch((rows) => rows.filter((row) => row.id !== details.id));
     }
   }
 
   const onClick = (e) => {
-    const getPokemonDetails = async () => {
-      const res = await PokemonService.GetPokemonDetail(e.row.id + 1);
-      if (res) {
-        setPokemonDetail({
-          name: res.name,
-          height: res.height,
-          weight: res.weight,
-          image: res.sprites.front_default,
-          abilities: Array.from(res.abilities, x => x.ability.name)
-        });
-      }
-      else {
-        setError({ title: "Error", content: "NotFound" })
-      }
-    }
-    getPokemonDetails();
+    getPokemonDetailsDispatch(e.row.id + 1);
   }
 
-  const handleChange = async (searchText) => {
-    setSearchValue(searchText ?? "");
-
-    if (searchText && searchText.length > 0 && showFavourite) {
-      setRows(requestSearch(searchText, rows));
-    } else if (searchText && searchText.length > 0) {
-      const res = await PokemonService.GetPokemonList(0, allCount);
-      if (res) {
-        const searchedRows = requestSearch(searchText, res.results.map((result, index) => {
-          return {
-            id: index,
-            isFavourite: favouriteList.findIndex(x => x.name === result.name) > -1,
-            ...result
-          };
-        }));
-        setRowCount(searchedRows.length);
-        setRows(searchedRows);
-      }
-      else {
-        setRows([])
-      }
+  const onPageChange = (e) => {
+    if (!showFavourite && searchValue.length === 0) {
+      getPokemonListDispatch({ seed: pageSize * e, favouriteList: favouriteList });
     }
   };
 
   return (
     <div style={{ height: 400, width: '100%' }}>
-      {error &&
-        <MainSnackBar
-          error={error}
-          setError={(error) => setError(error)}
-        />
-      }
+      <MainCounter />
       <Title />
-      <DataGrid
-        components={{
-          Toolbar: MainToolBar
-        }}
-        componentsProps={{
-          toolbar: {
-            loading: loading,
-            showFavourite: showFavourite,
-            setShowFavourite: setShowFavourite,
-            rows: rows,
-            setRows: setRows,
-            handleChange: (value) => handleChange(value)
-          }
-        }}
-        rows={rows}
+      <PokemonList
+        showFavourite={showFavourite}
+        setShowFavourite={setShowFavouriteDispatch}
+        setRowsDispatch={setRowsDispatch}
         columns={columns}
         pageSize={pageSize}
-        rowCount={rowCount}
-        loading={loading}
-        onPageChange={(e) => setCurrentPage(e)}
-        density="compact"
-        paginationMode="server"
-        disableSelectionOnClick={true}
+        onPageChange={onPageChange}
       />
-      <MainModal
-        pokemonDetail={pokemonDetail}
-        setPokemonDetail={setPokemonDetail}
-      />
+      <MainModal />
     </div>
   );
 }

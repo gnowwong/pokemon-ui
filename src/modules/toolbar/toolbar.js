@@ -2,35 +2,45 @@ import { Checkbox } from '@material-ui/core';
 import SearchBar from 'material-ui-search-bar';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
+import { useSelector } from 'react-redux';
 
-function MainToolBar(props) {
+function FavouriteCheckBox({ showFavourite, setShowFavourite }) {
+    return <div>
+        <Checkbox
+            checked={showFavourite ?? false}
+            onChange={() => { setShowFavourite(!showFavourite); }}
+        />
+        Show Favourite
+    </div>
+}
+
+function SearchText({ handleChange }) {
     const [searchValue, setSearchValue] = useState('');
+    const { loading } = useSelector(state => state.pokemon);  
 
-    const handleChange = (searchText) => {
+    const onChange = (searchText) => {
         setSearchValue(searchText ?? "");
-        if (props.handleChange) {
-            props.handleChange(searchText);
+        if (handleChange) {
+            handleChange(searchText);
         }
     };
 
+    return <SearchBar
+        className="pokemon-search-bar"
+        placeholder={"Press enter to search"}
+        value={searchValue}
+        onRequestSearch={onChange}
+        onCancelSearch={onChange}
+        disabled={loading}
+        onChange={onChange}
+    />
+}
+
+function MainToolBar(props) {
     return (
         <div className="enchanced-toolbar">
-            <div>
-                <Checkbox
-                    checked={props.showFavourite ?? false}
-                    onChange={() => { props.setShowFavourite(!props.showFavourite); }}
-                />
-                Show Favourite
-            </div>
-            <SearchBar
-                className="pokemon-search-bar"
-                placeholder={"Press enter to search"}
-                value={searchValue}
-                onRequestSearch={handleChange}
-                onCancelSearch={handleChange}
-                disabled={props.loading}
-                onChange={handleChange}
-            />
+            <FavouriteCheckBox showFavourite={props.showFavourite} setShowFavourite={props.setShowFavourite} />
+            <SearchText handleChange={props.handleChange} />
         </div>
     )
 }

@@ -1,4 +1,3 @@
-import PropTypes from 'prop-types';
 import { Box } from "@mui/system";
 import LineWeightIcon from '@mui/icons-material/LineWeight';
 import HeightIcon from '@mui/icons-material/Height';
@@ -9,7 +8,8 @@ import ListItemText from '@mui/material/ListItemText';
 import AcUnitIcon from '@mui/icons-material/AcUnit';
 import { Modal, ListItemIcon, Typography } from '@material-ui/core';
 import React from 'react';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { clearPokemon } from '../../services/reducers/root-reducer';
 
 const style = {
     position: 'absolute',
@@ -23,35 +23,38 @@ const style = {
     p: 4,
 };
 
-function MainModal(props) {
+function MainModal() {
+    const dispatch = useDispatch();
+    const pokemonDetail = useSelector(state => state.pokemon?.pokemonDetails);
+    const clearPokemonDetailsDispatch = (id) => dispatch(clearPokemon());
     return (
         <Modal
-            open={props.pokemonDetail !== undefined}
-            onClose={() => { props.setPokemonDetail(undefined) }}
+            open={!!pokemonDetail}
+            onClose={() => { clearPokemonDetailsDispatch() }}
         >
             <Box sx={style}>
                 <Typography id="modal-modal-title" variant="h6" component="h2">
-                    {props.pokemonDetail?.name}
+                    {pokemonDetail?.name}
                 </Typography>
                 <div className="pokemon-img-container">
                     <img
-                        src={props.pokemonDetail?.image}
-                        alt={props.pokemonDetail?.name}
+                        src={pokemonDetail?.image}
+                        alt={pokemonDetail?.name}
                         loading="lazy"
                         className="pokemon-img"
                     />
                 </div>
                 <div id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
-                    <LineWeightIcon /><p>{props.pokemonDetail?.weight}</p>
+                    <LineWeightIcon /><p>{pokemonDetail?.weight}</p>
                 </div>
                 <div id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
-                    <HeightIcon /> <p>{props.pokemonDetail?.height}</p>
+                    <HeightIcon /> <p>{pokemonDetail?.height}</p>
                 </div>
                 <div id="modal-modal-description" sx={{ mt: 2 }} className="pokemon-details">
                     <FitnessCenterTwoToneIcon />
                     <List dense={true} className="pokemon-details-list">
                         {
-                            props.pokemonDetail?.abilities.map((value) =>
+                            pokemonDetail?.abilities.map((value) =>
                                 React.cloneElement(<ListItem>
                                     <ListItemIcon>
                                         <AcUnitIcon fontSize="small" />
@@ -68,11 +71,6 @@ function MainModal(props) {
                 </div>
             </Box>
         </Modal>)
-}
-
-MainModal.propTypes = {
-    pokemonDetail: PropTypes.object,
-    setPokemonDetail: PropTypes.func.isRequired
 }
 
 export default MainModal;
