@@ -1,4 +1,5 @@
-import { Toolbar, Typography } from "@material-ui/core";
+import Toolbar from "@mui/material/Toolbar";
+import Typography from "@mui/material/Typography";
 
 const Title = () => {
     return (

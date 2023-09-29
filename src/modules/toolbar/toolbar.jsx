@@ -1,8 +1,8 @@
-import { Checkbox } from '@material-ui/core';
-import SearchBar from 'material-ui-search-bar';
 import PropTypes from 'prop-types';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
+import Checkbox from "@mui/material/Checkbox";
+import { TextField } from '@mui/material';
 
 function FavouriteCheckBox({ showFavourite, setShowFavourite }) {
     return <div>
@@ -18,19 +18,17 @@ function SearchText({ handleChange }) {
     const [searchValue, setSearchValue] = useState('');
     const { loading } = useSelector(state => state.pokemon);  
 
-    const onChange = (searchText) => {
-        setSearchValue(searchText ?? "");
+    const onChange = (e) => {
+        setSearchValue(e.target.value ?? "");
         if (handleChange) {
-            handleChange(searchText);
+            handleChange(e.target.value);
         }
     };
 
-    return <SearchBar
-        className="pokemon-search-bar"
+    return <TextField
+        className="m-1"
         placeholder={"Press enter to search"}
         value={searchValue}
-        onRequestSearch={onChange}
-        onCancelSearch={onChange}
         disabled={loading}
         onChange={onChange}
     />
@@ -38,7 +36,7 @@ function SearchText({ handleChange }) {
 
 function MainToolBar(props) {
     return (
-        <div className="enchanced-toolbar">
+        <div className="flex justify-between">
             <FavouriteCheckBox showFavourite={props.showFavourite} setShowFavourite={props.setShowFavourite} />
             <SearchText handleChange={props.handleChange} />
         </div>
