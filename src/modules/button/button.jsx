@@ -1,10 +1,9 @@
-import { Button } from '@material-ui/core';
+import Button from '@mui/material/Button';
 import PropTypes from 'prop-types';
 
 function MainButton(props) {
 
     return <Button
-        className="pokemon-name-modal"
         onClick={() => props.onClick(props.details)}
         variant="text"
         size="small">{props.details.row.name}
