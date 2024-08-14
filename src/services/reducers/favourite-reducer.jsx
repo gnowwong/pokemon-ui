@@ -9,6 +9,7 @@ export default function favourite(state = favouriteInitState, action) {
     switch (action.type) {
         case ActionType.HANDLE_FAVOURITE: {
             const _state = { ...state };
+            console.log("add favourite");
             if (_state.favouriteList.findIndex(x => x.name === action.payload.name) > -1) {
                 _state.favouriteList = _state.favouriteList.filter(x => x.name !== action.payload.name);
             }

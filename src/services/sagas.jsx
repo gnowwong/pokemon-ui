@@ -2,7 +2,7 @@ import { put, takeEvery, all, call, takeLatest } from 'redux-saga/effects'
 import { PokemonService } from './axios-service';
 import { ActionType, pokemonList, setPokemonDetails, setRowCount, setSearchRows } from './reducers/root-reducer';
 import { apiCallFailed, apiCallSucceed } from './reducers/snack-bar-reducer';
-import './../helper/stringHelper';
+import '../helper/stringHelper';
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms))
 

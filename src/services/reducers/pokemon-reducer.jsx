@@ -46,6 +46,7 @@ export default function pokemon(state = pokemonListInitState, action) {
             return _state;
         }
         case ActionType.SET_POKEMON_LIST_ROW: {
+            console.log("setRowsDispatch");
             let _state = Object.assign({}, state);
             _state.rows = action.payload.map((result, index) => {
                 return {
